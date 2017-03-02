@@ -181,7 +181,7 @@ class RobotRoutine(object):
             return True
             
         # else we're about the hard threshold and the task is time critical
-        if self.battery_state.lifePercent > self.threshold and self._is_time_critical(task):
+        if self.battery_state.voltage > self.threshold and self._is_time_critical(task):
             return True
         
         return (task.start_node_id in self._charging_points and self._current_node == task.start_node_id)
@@ -330,13 +330,13 @@ class RobotRoutine(object):
         if self.battery_state is not None:
 
             # if batter is below threshold, it's never ok
-            if self.battery_state.lifePercent < self.soft_threshold:                
+            if self.battery_state.voltage < self.soft_threshold:                
                 return False
             # else if we're charging we should allow some amount of charging to happen
             # before everything is ok again
             elif self.battery_state.charging or self.battery_state.powerSupplyPresent:
-                threshold = min(self.soft_threshold + self.addition, 98)                
-                return self.battery_state.lifePercent > threshold
+                threshold = min(self.soft_threshold + self.addition, 28.8)                
+                return self.battery_state.voltage > threshold
             else:
                 return True
 
@@ -349,9 +349,9 @@ class RobotRoutine(object):
         Updates the discrete battery threshold of the routine.
         """
 
-        if self.battery_state.lifePercent < self.threshold:
+        if self.battery_state.voltage < self.threshold:
             new_state = UNDER_HARD_THRESHOLD
-        elif  self.battery_state.lifePercent < self.soft_threshold:
+        elif  self.battery_state.voltage < self.soft_threshold:
             new_state = UNDER_SOFT_THRESHOLD
         else:
             new_state = NO_THRESHOLD
@@ -374,14 +374,14 @@ class RobotRoutine(object):
             # if not ok and not triggered yet
             if self.battery_count == 0:
                 # if we're below soft threshold but above hard threshold then add a charge tasks not clear
-                if self.battery_state.lifePercent > self.threshold:
-                    rospy.logwarn('Battery below soft charge threshold: %s ' % (self.battery_state.lifePercent)) 
+                if self.battery_state.voltage > self.threshold:
+                    rospy.logwarn('Battery below soft charge threshold: %s ' % (self.battery_state.voltage)) 
                     self.add_charge(self.force_charge_duration)
                     # bit of a hack to delay the update for this to happen again
                     self.battery_count = -(self.battery_count_thres * 2) 
 
                 else:
-                    rospy.logwarn('Battery below force charge threshold: %s ' % (self.battery_state.lifePercent))
+                    rospy.logwarn('Battery below force charge threshold: %s ' % (self.battery_state.voltage))
                     self.clear_then_charge(self.force_charge_duration)
             
             # update count
